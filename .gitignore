@@ -1,0 +1,6 @@
+*.yaml
+.venv/
+*.json
+*.wav
+app-example/
+node_modules/
