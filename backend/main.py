@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import whisper
-import openai
+from openai import OpenAI
+
 import os
 from google.cloud import texttospeech
 import yaml
@@ -8,9 +9,9 @@ import yaml
 with open('config.yaml', 'r') as file:
     data = yaml.safe_load(file)
 
+client = OpenAI(api_key=data['OPENAI_API_KEY'])
 app = Flask(__name__)
 model = whisper.load_model("base")
-openai.api_key = data['OPENAI_API_KEY']
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = data['GOOGLE_APPLICATION_CREDENTIALS_JSON']
 tts_client = texttospeech.TextToSpeechClient()
@@ -24,14 +25,12 @@ def ask():
     user_text = result["text"]
     print("User said:", user_text)
 
-    gpt_response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": "آپ ایک اردو بولنے والے مددگار ہیں۔"},
-            {"role": "user", "content": user_text}
-        ]
-    )
-    reply = gpt_response['choices'][0]['message']['content']
+    gpt_response = client.chat.completions.create(model="gpt-3.5-turbo",
+    messages=[
+        {"role": "system", "content": "آپ ایک اردو بولنے والے مددگار ہیں۔"},
+        {"role": "user", "content": user_text}
+    ])
+    reply = gpt_response.choices[0].message.content
 
     # Text-to-speech
     synthesis_input = texttospeech.SynthesisInput(text=reply)
